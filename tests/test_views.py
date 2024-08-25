@@ -5,13 +5,12 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
-from src.views import (get_card_information, get_date_range, get_list_stock,
-                       get_list_value, get_top_transactions, get_user_settings,
-                       greeting, transactions_from_files)
+from src.utils import get_date_range, get_user_settings, greeting, transactions_from_files
+from src.views import get_card_information, get_list_stock, get_list_value, get_top_transactions
 
 
 def test_greeting_morning():
-    with patch("src.views.datetime") as mock_datetime:
+    with patch("src.utils.datetime") as mock_datetime:
         mock_datetime.now.return_value = datetime(2024, 8, 11, 9, 0, 0)
         assert greeting() == "Доброе утро"
 

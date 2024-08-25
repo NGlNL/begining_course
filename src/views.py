@@ -1,7 +1,5 @@
-import json
 import os
-from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List
 
 import pandas as pd
 import requests
@@ -10,32 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 ALPHA_KEY = os.getenv("ALPHA_KEY")
-
-
-def greeting():
-    """Функция приветствия по времени суток."""
-    hour = datetime.now().hour
-    if 6 <= hour < 12:
-        return "Доброе утро"
-    elif 12 <= hour < 18:
-        return "Добрый день"
-    elif 18 <= hour < 24:
-        return "Добрый вечер"
-    else:
-        return "Доброй ночи"
-
-
-def transactions_from_files(file_path: str, start_date: datetime, end_date: datetime):
-    """Функция принимает путь до файла, формат времени по дате операции."""
-    data = pd.read_excel(file_path)
-    data["Дата операции"] = pd.to_datetime(
-        data["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce"
-    )
-    if start_date:
-        data = data[data["Дата операции"] >= start_date]
-    if end_date:
-        data = data[data["Дата операции"] <= end_date]
-    return data
 
 
 def get_card_information(df: pd.DataFrame) -> Any:
@@ -56,15 +28,7 @@ def get_card_information(df: pd.DataFrame) -> Any:
     return card_information
 
 
-def get_date_range(date_str: str):
-    """Функция делает диапозон времени."""
-    date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-    start_date = date.replace(day=1)
-    end_date = date
-    return start_date, end_date
-
-
-def get_top_transactions(data):
+def get_top_transactions(data: pd.DataFrame) -> list[dict[str, Any]]:
     """Функция возвращает топ-5 транзакций."""
     data["Дата операции"] = pd.to_datetime(data["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
     df = data.dropna(subset=["Дата операции"])
@@ -93,13 +57,7 @@ def get_top_transactions(data):
     return formatted_transactions
 
 
-def get_user_settings():
-    """Функция читает JSON-файл"""
-    with open("../user_settings.json", "r") as f:
-        return json.load(f)
-
-
-def get_list_value(values):
+def get_list_value(values: list) -> List[Dict]:
     """Функция дает ответ о курсе валют по API."""
     currency_values = []
     for value in values:
@@ -109,13 +67,11 @@ def get_list_value(values):
         response = requests.get(url, headers=headers, params=params)
         if response.status_code == 200:
             data = response.json()
-            currency_values.append(
-                {"currency": value, "rate": data["rates"].get("RUB", "N/A")}
-            )
+            currency_values.append({"currency": value, "rate": data["rates"].get("RUB", "N/A")})
     return currency_values
 
 
-def get_list_stock(stocks):
+def get_list_stock(stocks: list) -> List[Dict]:
     """Функция дает ответ о стоимости акций."""
     stock_prices = []
     for stock in stocks:
