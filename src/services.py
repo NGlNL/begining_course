@@ -1,8 +1,11 @@
 import json
+import logging
 from datetime import datetime
-from typing import Hashable, Any
+from typing import Any, Hashable
 
 import pandas as pd
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def info_from_excel(filepath: str = "../data/operations.xlsx") -> list[dict[Hashable, Any]]:
@@ -34,14 +37,32 @@ def get_month() -> str:
 
 def get_services(data: list[dict[Hashable, Any]], year: int, month: int) -> str:
     """Анализ выгодности категорий повышенного кешбэка"""
+    logging.info("Начало анализа данных")
+
     analysis = {}
     for transaction in data:
-        date = datetime.strptime(transaction.get("Дата операции", ""), "%d.%m.%Y %H:%M:%S")
-        if date.year == year and date.month == month:
-            category = transaction.get("Категория", "")
-            if float(transaction.get("Бонусы (включая кэшбэк)", "")) > 0:
-                if category not in analysis:
-                    analysis[category] = 0.0
-                analysis[category] += float(transaction.get("Бонусы (включая кэшбэк)", ""))
+        try:
+            date_str = transaction.get("Дата операции", "")
+            date = datetime.strptime(date_str, "%d.%m.%Y %H:%M:%S")
+            logging.debug(f"Обрабатывается дата: {date_str}")
+
+            if date.year == year and date.month == month:
+                category = transaction.get("Категория", "")
+                bonus_str = transaction.get("Бонусы (включая кэшбэк)", "")
+                bonus = float(bonus_str) if bonus_str else 0.0
+
+                logging.debug(f"Категория: {category}, Бонус: {bonus}")
+
+                if bonus > 0:
+                    if category not in analysis:
+                        analysis[category] = 0.0
+                    analysis[category] += bonus
+
+        except ValueError as e:
+            logging.error(f"Ошибка обработки транзакции: {transaction}. Ошибка: {e}")
+
     sorted_analysis = dict(sorted(analysis.items(), key=lambda item: item[1], reverse=True))
+    logging.info("Анализ завершен")
+    logging.debug(f"Результат анализа: {sorted_analysis}")
+
     return json.dumps(sorted_analysis, indent=4, ensure_ascii=False)
